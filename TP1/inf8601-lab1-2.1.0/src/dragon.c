@@ -77,12 +77,14 @@ int dragon_draw_raw(uint64_t start, uint64_t end, char *dragon, int width, int h
 	position.x -= limits.minimums.x;
 	position.y -= limits.minimums.y;
 	int area = width * height;
+	printf("width %i height %i %i\n", width, height, id);
 	for (n = start + 1; n <= end; n++) {
 		j = (position.x + (position.x + orientation.x)) >> 1;
 		i = (position.y + (position.y + orientation.y)) >> 1;
 		int index = i * width + j;
 		if (index < 0 || index > area) {
 			printf("index is out of range\n");
+			printf("%i\n",index);
 			return -1;
 		}
 		dragon[index] = id;
@@ -315,6 +317,7 @@ int dragon_limits_serial(limits_t *lim, uint64_t nbIterations, __attribute__((un
 	piece_t piece;
 	piece_init(&piece);
 	uint64_t start = 0;
+	printf("nbIterations: %u \n",nbIterations);
 	piece_limit(start, nbIterations, &piece);
 	*lim = piece.limits;
 	return 0;

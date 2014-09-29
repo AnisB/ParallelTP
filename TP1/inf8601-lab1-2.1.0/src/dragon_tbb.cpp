@@ -101,10 +101,7 @@ public:
 	}	
 	void operator()(const blocked_range<int>& r) const
 	{
-		for(int i = r.begin(); i <r.end(); ++i)
-		{
-			canvas[i] = value;
-		}
+		init_canvas(r.begin(), r.end(), canvas, -1);
 	}	
 	char value;
 	char *canvas;
@@ -196,7 +193,6 @@ int dragon_limits_tbb(limits_t *limits, uint64_t size, int nb_thread)
 {
 	DragonLimits lim;
 	task_scheduler_init task(nb_thread);
-	
 
 	parallel_reduce(blocked_range<int>(0, size), lim);
 	

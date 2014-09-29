@@ -36,7 +36,7 @@ void *dragon_draw_worker(void *data)
 	int start1 = drw->id*dragon_surface/drw->nb_thread;
 	int end1 = (drw->id+1)*dragon_surface/drw->nb_thread;
 	init_canvas(start1, end1, drw->dragon,-1);
-	printf_safe("coucou %i\n", drw->id);
+	//printf_safe("Pthread id %i\n", drw->id);
 	pthread_barrier_wait(drw->barrier);
 	
 	/* 2. Dessiner le dragon */

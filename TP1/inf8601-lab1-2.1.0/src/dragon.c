@@ -16,6 +16,8 @@
 #include "dragon.h"
 #include "color.h"
 
+static int counter = 0;
+
 xy_t compute_position(int64_t i)
 {
 	xy_t position;
@@ -58,7 +60,11 @@ xy_t compute_orientation(int64_t i)
 
 /* draw dragon in raw matrix */
 int dragon_draw_raw(uint64_t start, uint64_t end, char *dragon, int width, int height, limits_t limits, char id)
-{
+{	
+	counter++;
+
+	//printf("%i\n", gettid());
+	//printf("	Intervalle de calcul [%i,%i]: \n", start,end);
 	//printf("start=%" PRId64" end=%"PRId64" id=%d\n", start, end, id);
 	if (end < start)
 		printf("error: start=%"PRId64" > end=%"PRId64"\n", start, end);
@@ -134,6 +140,7 @@ void dump_canvas_rgb(struct rgb *canvas, int width, int height)
 void scale_dragon(int start, int end, struct rgb *image, int image_width, int image_height,
         char *dragon, int dragon_width, int dragon_height, struct palette *palette)
 {
+	printf("%i\n", counter);
     int i, j, x, y;
     int scale_x = dragon_width / image_width + 1;
     int scale_y = dragon_height / image_height + 1;

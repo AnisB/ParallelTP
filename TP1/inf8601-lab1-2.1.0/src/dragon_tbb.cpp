@@ -14,17 +14,19 @@ extern "C" {
 }
 #include "dragon_tbb.h"
 #include "tbb/tbb.h"
-
+#include "TidMap.h"
+#include <iostream>
 using namespace std;
 using namespace tbb;
 
+TidMap* tid = NULL;
 class DragonLimits {
 	public:
 		DragonLimits()
 		{
 			piece_init(&value);
 		}
-		DragonLimits(DragonLimits& drgL, split)
+		DragonLimits(const DragonLimits& drgL, split)
 		{
 			piece_init(&value);
 		}
@@ -50,11 +52,13 @@ class DragonDraw
 		: data(parData)
 		, index(0)
 		{
+	
 		}
-		DragonDraw(DragonDraw& drgL, split)
+		DragonDraw(const DragonDraw& drgL)
 		: data(drgL.data)
 		, index(drgL.index)
 		{
+			tid->getIdFromTid(gettid());
 		}
 		void increment()
 		{
@@ -62,6 +66,7 @@ class DragonDraw
 		}
 		void operator()(const blocked_range<uint64_t>& r) const
 		{
+
 			dragon_draw_raw(r.begin(), r.end(), data->dragon, data->dragon_width, data->dragon_height, data->limits, index);
 		}
 		struct draw_data* data;
@@ -75,7 +80,7 @@ class DragonRender
 		: data(parData)
 		{
 		}
-		DragonRender(DragonRender& drgR, split)
+		DragonRender(const DragonRender& drgR)
 		: data(drgR.data)
 		{
 		}
@@ -94,7 +99,7 @@ public:
 	{
 		
 	}
-	DragonClear(DragonClear& drgC, split)
+	DragonClear(const DragonClear& drgC)
 	: value(drgC.value)
 	, canvas(drgC.canvas)
 	{
@@ -109,6 +114,7 @@ public:
 
 int dragon_draw_tbb(char **canvas, struct rgb *image, int width, int height, uint64_t size, int nb_thread)
 {
+	tid = new TidMap(32);
 	struct draw_data data;
 	limits_t limits;
 	char *dragon = NULL;
@@ -182,6 +188,7 @@ int dragon_draw_tbb(char **canvas, struct rgb *image, int width, int height, uin
 	init.terminate();
 	free_palette(palette);
 	*canvas = dragon;
+	tid->dump();
 	return 0;
 }
 

@@ -177,7 +177,7 @@ dragon_tbb.o: dragon_tbb.cpp /usr/include/stdc-predef.h \
  /usr/include/tbb/internal/_aggregator_impl.h \
  /usr/include/tbb/recursive_mutex.h /usr/include/tbb/spin_mutex.h \
  /usr/include/tbb/task_group.h /usr/include/tbb/task_scheduler_init.h \
- /usr/include/tbb/task_scheduler_observer.h
+ /usr/include/tbb/task_scheduler_observer.h TidMap.h
 
 /usr/include/stdc-predef.h:
 
@@ -706,3 +706,5 @@ dragon_tbb.h:
 /usr/include/tbb/task_scheduler_init.h:
 
 /usr/include/tbb/task_scheduler_observer.h:
+
+TidMap.h:

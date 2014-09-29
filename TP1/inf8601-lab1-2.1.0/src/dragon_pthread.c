@@ -31,33 +31,28 @@ void printf_safe(char *format, ...)
 void *dragon_draw_worker(void *data)
 {
 	struct draw_data *drw = (struct draw_data *) data;
-	//printf("thread id is : %u \n",drw->id );
 	/* 1. Initialiser la surface */
 	int dragon_surface = drw->dragon_width * drw->dragon_height;
-	int start1 = (uint64_t)(drw->id*dragon_surface/(double)drw->nb_thread);
-	int end1 = (uint64_t)((drw->id+1)*dragon_surface/(double)drw->nb_thread)-1;
-	//printf("interval1: %u \n", dragon_surface);	
-	//printf("start1: %u \n",start1);
-	//printf("end1: %u \n",end1);
+	int start1 = drw->id*dragon_surface/drw->nb_thread;
+	int end1 = (drw->id+1)*dragon_surface/drw->nb_thread;
 	init_canvas(start1, end1, drw->dragon,-1);
-
-	/* 2. Dessiner le dragon */
-	uint64_t start = (uint64_t)(drw->id * drw->size / (double)drw->nb_thread);
-	uint64_t end = (uint64_t)((drw->id + 1) * drw->size / (double)drw->nb_thread)-1;
-	//printf("thread id is : %u \n",drw->id );
-	//printf("interval2: %u \n", drw->size);	
-	//printf("start2: %u \n",start);
-	//printf("end2: %u \n",end);
-	dragon_draw_raw(start, end, drw->dragon, drw->dragon_width, drw->dragon_height, drw->limits, drw->id);
+	printf_safe("prewait %i\n", drw->id);
+	pthread_barrier_wait(drw->barrier);
 	
+	/* 2. Dessiner le dragon */
+	uint64_t start = drw->id * drw->size /drw->nb_thread;
+	uint64_t end = (drw->id + 1) * drw->size /drw->nb_thread;
+	dragon_draw_raw(start, end, drw->dragon, drw->dragon_width, drw->dragon_height, drw->limits, drw->id);
+		printf_safe("prewait %i\n", drw->id);
+	pthread_barrier_wait(drw->barrier);
+
 	/* 3. Effectuer le rendu final */
-	//printf("thread id is : %u \n",drw->id );
-	uint64_t start3 = (uint64_t)(drw->id * drw->image_height / (double)drw->nb_thread);
-	uint64_t end3 = (uint64_t)((drw->id + 1) * drw->image_height / (double)drw->nb_thread)-1;
-	/*printf("interval3: %u \n", drw->image_height);	
-	printf("start3: %u \n",start3);
-	printf("end3: %u \n",end3);*/
+	uint64_t start3 = drw->id * drw->image_height /drw->nb_thread;
+	uint64_t end3 = (drw->id + 1) * drw->image_height / drw->nb_thread;
+
 	scale_dragon(start3, end3, drw->image, drw->image_width, drw->image_height, drw->dragon, drw->dragon_width, drw->dragon_height, drw->palette);
+	printf_safe("prewait %i\n", drw->id);
+	pthread_barrier_wait(drw->barrier);
 	return NULL;
 }
 
@@ -121,7 +116,6 @@ int dragon_draw_pthread(char **canvas, struct rgb *image, int width, int height,
 	info.palette = palette;
 	info.dragon = dragon;
 	info.image = image;
-	printf("dragon_width %i dragon_height %i\n", info.dragon_width, info.dragon_height);
 	/* 2. Lancement du calcul parallèle principal avec draw_dragon_worker */
 	int m = 0;
 	for (m = 0; m < nb_thread; m++) 
@@ -183,14 +177,12 @@ int dragon_limits_pthread(limits_t *limits, uint64_t size, int nb_thread)
 		goto err;
 	
 	/* 1. Lancement du calcul en parallèle avec dragon_limit_worker */
-	printf("size: %u \n",size);
 	int i = 0;
 	for( i = 0; i < nb_thread; ++i)
 	{
-		thread_data[i].start = (uint64_t)(i*size/(double)nb_thread);
-		thread_data[i].end = (uint64_t)((i+1)*size/(double)nb_thread)-1;
-//		printf("start: %u \n",thread_data[i].start);
-//		printf("end: %u \n",thread_data[i].end);
+		thread_data[i].id  = i;
+		thread_data[i].start = i*size/nb_thread;
+		thread_data[i].end = (i+1)*size/nb_thread;
 		thread_data[i].piece = master;
 		pthread_create(threads+i, NULL, dragon_limit_worker, thread_data+i);
 	}

@@ -16,7 +16,6 @@
 #include "dragon_pthread.h"
 
 pthread_mutex_t mutex_stdout;
-
 void printf_safe(char *format, ...)
 {
 	va_list ap;
@@ -30,13 +29,13 @@ void printf_safe(char *format, ...)
 
 void *dragon_draw_worker(void *data)
 {
+	printf("threadid: %i\n", gettid());
 	struct draw_data *drw = (struct draw_data *) data;
 	/* 1. Initialiser la surface */
-	int dragon_surface = drw->dragon_width * drw->dragon_height;
-	int start1 = drw->id*dragon_surface/drw->nb_thread;
-	int end1 = (drw->id+1)*dragon_surface/drw->nb_thread;
+	long int dragon_surface = drw->dragon_width * drw->dragon_height;
+	int start1 = drw->id*dragon_surface/(long int)drw->nb_thread;
+	int end1 = (drw->id+1)*dragon_surface/(long int)drw->nb_thread;
 	init_canvas(start1, end1, drw->dragon,-1);
-	//printf_safe("Pthread id %i\n", drw->id);
 	pthread_barrier_wait(drw->barrier);
 	
 	/* 2. Dessiner le dragon */
@@ -51,6 +50,7 @@ void *dragon_draw_worker(void *data)
 
 	scale_dragon(start3, end3, drw->image, drw->image_width, drw->image_height, drw->dragon, drw->dragon_width, drw->dragon_height, drw->palette);
 	pthread_barrier_wait(drw->barrier);
+	
 	return NULL;
 }
 
@@ -96,7 +96,7 @@ int dragon_draw_pthread(char **canvas, struct rgb *image, int width, int height,
 		printf("malloc error threads\n");
 		goto err;
 	}
-
+	
 	info.image_height = height;
 	info.image_width = width;
 	scale_x = info.dragon_width / width + 1;
@@ -113,6 +113,7 @@ int dragon_draw_pthread(char **canvas, struct rgb *image, int width, int height,
 	info.palette = palette;
 	info.dragon = dragon;
 	info.image = image;
+	
 	/* 2. Lancement du calcul parallèle principal avec draw_dragon_worker */
 	int thread_id = 0;
 	for (thread_id = 0; thread_id < nb_thread; thread_id++) 
@@ -122,10 +123,12 @@ int dragon_draw_pthread(char **canvas, struct rgb *image, int width, int height,
 		if(pthread_create(&threads[thread_id], NULL, dragon_draw_worker, &data[thread_id])!=0)
 			goto err;
 	}
-
+	
 	for(thread_id = 0; thread_id < nb_thread; ++thread_id)
 	{
+		//printf("pre %i\n", thread_id);
 		pthread_join(threads[thread_id],NULL);
+		//printf("post %i\n", thread_id);
 	}
 
 	/* 3. Attendre la fin du traitement */

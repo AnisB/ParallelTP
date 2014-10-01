@@ -1,8 +1,9 @@
 #!/bin/sh -x
 
 EXE=./src/dragonizer
-PWR=24
-CMD="$EXE --cmd draw --power $PWR"
+PWR=25
+TRD=8
+CMD="$EXE --cmd draw --power $PWR --thread $TRD"  
 
-$CMD --lib pthread
+#$CMD --lib pthread
 $CMD --lib tbb

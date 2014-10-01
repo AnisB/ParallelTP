@@ -19,6 +19,7 @@ extern "C" {
 using namespace std;
 using namespace tbb;
 
+
 TidMap* tid = NULL;
 class DragonLimits {
 	public:
@@ -44,29 +45,24 @@ class DragonLimits {
 		}
 		piece_t value;
 };
-
+static int threadCounter = 0;
 class DragonDraw 
 {
 	public:
 		DragonDraw(struct draw_data* parData)
 		: data(parData)
-		, index(0)
+		, index (0)
 		{
 	
 		}
 		DragonDraw(const DragonDraw& drgL)
 		: data(drgL.data)
-		, index(drgL.index)
 		{
+			index = ++threadCounter;
 			tid->getIdFromTid(gettid());
-		}
-		void increment()
-		{
-			index++;
 		}
 		void operator()(const blocked_range<uint64_t>& r) const
 		{
-
 			dragon_draw_raw(r.begin(), r.end(), data->dragon, data->dragon_width, data->dragon_height, data->limits, index);
 		}
 		struct draw_data* data;
@@ -168,18 +164,13 @@ int dragon_draw_tbb(char **canvas, struct rgb *image, int width, int height, uin
 
 	/* 2. Initialiser la surface : DragonClear */
 	DragonClear clear(-1, dragon);
+	std::cout<<"threadid "<<gettid()<<std::endl;
 	parallel_for(blocked_range<int>(0, dragon_surface), clear);
 	/* 3. Dessiner le dragon : DragonDraw */
 	// Draw dragon
 	DragonDraw draw(&data);
-	for (int m = 0; m < nb_thread; m++) 
-	{
-		uint64_t start = m * size / nb_thread;
-		uint64_t end = (m + 1) * size / nb_thread;
-		parallel_for(blocked_range<uint64_t>(start, end), draw);
-		draw.increment();
-
-	}
+	//printf("nb threads tbb %i \n",nb_thread);
+	parallel_for(blocked_range<uint64_t>(0, data.size), draw);
 
 	/* 4. Effectuer le rendu final : DragonRender */
 	DragonRender render(&data);

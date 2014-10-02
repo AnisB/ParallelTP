@@ -19,8 +19,8 @@ extern "C" {
 using namespace std;
 using namespace tbb;
 
+static TidMap* tid = NULL;
 
-TidMap* tid = NULL;
 class DragonLimits {
 	public:
 		DragonLimits()
@@ -58,7 +58,9 @@ class DragonDraw
 		DragonDraw(const DragonDraw& drgL)
 		: data(drgL.data)
 		{
+			// on ne met pas de mutex car c'est uniquement utile à la coloration
 			index = ++threadCounter;
+			// Indexation de l'ID
 			tid->getIdFromTid(gettid());
 		}
 		void operator()(const blocked_range<uint64_t>& r) const
@@ -110,7 +112,9 @@ public:
 
 int dragon_draw_tbb(char **canvas, struct rgb *image, int width, int height, uint64_t size, int nb_thread)
 {
-	tid = new TidMap(32);
+	// Allocation mémoire du TIDMAP
+	tid = new TidMap(nb_thread*2);
+
 	struct draw_data data;
 	limits_t limits;
 	char *dragon = NULL;
@@ -164,12 +168,10 @@ int dragon_draw_tbb(char **canvas, struct rgb *image, int width, int height, uin
 
 	/* 2. Initialiser la surface : DragonClear */
 	DragonClear clear(-1, dragon);
-	std::cout<<"threadid "<<gettid()<<std::endl;
 	parallel_for(blocked_range<int>(0, dragon_surface), clear);
 	/* 3. Dessiner le dragon : DragonDraw */
 	// Draw dragon
 	DragonDraw draw(&data);
-	//printf("nb threads tbb %i \n",nb_thread);
 	parallel_for(blocked_range<uint64_t>(0, data.size), draw);
 
 	/* 4. Effectuer le rendu final : DragonRender */
@@ -180,6 +182,7 @@ int dragon_draw_tbb(char **canvas, struct rgb *image, int width, int height, uin
 	free_palette(palette);
 	*canvas = dragon;
 	tid->dump();
+	delete tid;
 	return 0;
 }
 

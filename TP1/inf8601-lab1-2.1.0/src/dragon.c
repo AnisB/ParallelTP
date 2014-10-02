@@ -16,8 +16,6 @@
 #include "dragon.h"
 #include "color.h"
 
-static int counter = 0;
-
 xy_t compute_position(int64_t i)
 {
 	xy_t position;
@@ -61,12 +59,6 @@ xy_t compute_orientation(int64_t i)
 /* draw dragon in raw matrix */
 int dragon_draw_raw(uint64_t start, uint64_t end, char *dragon, int width, int height, limits_t limits, char id)
 {	
-	counter++;
-
-	//printf("%i\n", gettid());
-	//printf("a");
-	//printf("	Intervalle de calcul [%i,%i]: \n", start,end);
-	//printf("start=%" PRId64" end=%"PRId64" id=%d\n", start, end, id);
 	if (end < start)
 		printf("error: start=%"PRId64" > end=%"PRId64"\n", start, end);
 

@@ -51,7 +51,7 @@ void *dragon_draw_worker(void *data)
 	start = drw->id * drw->image_height /drw->nb_thread;
 	end = (drw->id + 1) * drw->image_height / drw->nb_thread;
 
-	scale_dragon(start3, end3, drw->image, drw->image_width, drw->image_height, drw->dragon, drw->dragon_width, drw->dragon_height, drw->palette);
+	scale_dragon(start, end, drw->image, drw->image_width, drw->image_height, drw->dragon, drw->dragon_width, drw->dragon_height, drw->palette);
 	// Syncronisation des threads
 	pthread_barrier_wait(drw->barrier);
 	

@@ -45,7 +45,7 @@ class DragonLimits {
 		}
 		piece_t value;
 };
-static int threadCounter = 0;
+
 class DragonDraw 
 {
 	public:
@@ -58,8 +58,7 @@ class DragonDraw
 		DragonDraw(const DragonDraw& drgL)
 		: data(drgL.data)
 		{
-			// on ne met pas de mutex car c'est uniquement utile à la coloration
-			index = ++threadCounter;
+			// L'index est laissé pseudo aléatoire pour donner des couleurs différentes 
 			// Indexation de l'ID
 			tid->getIdFromTid(gettid());
 		}

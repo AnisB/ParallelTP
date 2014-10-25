@@ -26,8 +26,40 @@ struct cs {
 
 int encode_fast(struct chunk *chunk)
 {
-    // TODO
-    chunk->checksum = 42;
+    int i;
+    int area = chunk->area;
+    int key = chunk->key;
+    char *data = chunk->data;
+    struct cs* cs;
+    int n;
+    int sig;
+
+    uint64_t checksum;
+
+    #pragma omp parallel private(i, checksum)
+    {
+        #pragma omp single
+        {
+            n = omp_get_num_threads();
+            cs = calloc(n, sizeof(struct cs));
+            sig = area/sigma(n);
+        }
+        #pragma omp barrier
+        checksum = 0;
+        int id = omp_get_thread_num();
+        int start = (int) (((uint64_t)sigma(id)) * sig);
+        int end   = (int) (((uint64_t)sigma(id + 1)) * sig);
+
+        for (i = start; i < end; ++i) {
+            data[i] = data[i] + key;
+            checksum += data[i];
+        }
+        #pragma omp barrier
+        cs[id].checksum = checksum;
+    }
+    chunk->checksum = 0;
+    for (i = 0; i < n; ++i)
+        chunk->checksum += cs[i].checksum;
     return 0;
 }
 

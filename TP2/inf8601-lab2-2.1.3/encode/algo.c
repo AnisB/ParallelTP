@@ -24,6 +24,7 @@ struct cs {
     uint64_t checksum;
 } __attribute__((aligned(64)));
 
+/*
 int encode_fast(struct chunk *chunk)
 {
     int i;
@@ -60,6 +61,58 @@ int encode_fast(struct chunk *chunk)
     chunk->checksum = 0;
     for (i = 0; i < n; ++i)
         chunk->checksum += cs[i].checksum;
+    return 0;
+}
+*/
+
+int encode_fast(struct chunk *chunk)
+{
+    int i;
+    int area = chunk->area;
+    int key = chunk->key;
+    char *data = chunk->data;
+    struct cs* cs;
+    int n;
+    int sig;
+    uint64_t checksum = 0;
+	//printf("Coucou %d\n", area);
+    
+    n = omp_get_num_threads();
+	
+    //printf("number thread %d\n", n);
+    if(n > 1)
+    {
+		cs = calloc(n, sizeof(struct cs));
+		sig = sigma(n);
+    	#pragma omp parallel private(i, checksum)
+    	{
+
+		    #pragma omp barrier
+			checksum = 0;
+			int id = omp_get_thread_num();
+			int start = (int) (((uint64_t)sigma(id)) * area / sig);
+			int end   = (int) (((uint64_t)sigma(id + 1)) * area / sig);
+			for (i = start; i < end; i++) 
+			{
+				data[i] = data[i] + key;
+				checksum += data[i];
+			}
+			#pragma omp barrier
+			cs[id].checksum = checksum;
+		}
+		chunk->checksum = 0;
+		for (i = 0; i < n; i++)
+    		chunk->checksum += cs[i].checksum;
+    }
+    else
+    { 
+		for (i = 0; i < area; i++) 
+		{
+			data[i] = data[i] + key;
+			checksum += data[i];
+		}
+		chunk->checksum = checksum;
+    }
     return 0;
 }
 
@@ -130,6 +183,7 @@ int encode_slow_c(struct chunk *chunk)
 
 int encode_slow_d(struct chunk *chunk)
 {
+/*
     int i;
     int checksum = 0;
     char *data = chunk->data;
@@ -145,6 +199,7 @@ int encode_slow_d(struct chunk *chunk)
         }
     }
     chunk->checksum = checksum;
+*/
     return 0;
 
 }

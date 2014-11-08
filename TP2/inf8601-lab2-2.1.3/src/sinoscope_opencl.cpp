@@ -134,10 +134,9 @@ error:
 
 int create_buffer(int width, int height)
 {
-    /*
-     * TODO: initialiser la memoire requise avec clCreateBuffer()
-     */
-    cl_int ret = 0;
+    cl_int ret;
+    output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, width*height, NULL, &ret);
+    ERR_THROW(CL_SUCCESS, ret, "clCreateBuffer failed");
     goto error;
 done:
     return ret;
@@ -182,35 +181,27 @@ void opencl_shutdown()
 {
     if (queue) 	clReleaseCommandQueue(queue);
     if (context)	clReleaseContext(context);
+    
+    if(kernel) clReleaseKernel(kernel);
+    if(output) clReleaseMemObject(output);
 
-    /*
-     * TODO: liberer les ressources allouees
-     */
 }
 
 int sinoscope_image_opencl(sinoscope_t *ptr)
 {
-    TODO("sinoscope_image_opencl");
-    /*
-     * TODO: Executer le noyau avec la fonction run_kernel().
-     *
-     *       1. Passer les arguments au noyau avec clSetKernelArg(). Si des
-     *          arguments sont passees par un tampon, copier les valeurs avec
-     *          clEnqueueWriteBuffer() de maniere synchrone.
-     *
-     *       2. Appeller le noyau avec clEnqueueNDRangeKernel(). L'argument
-     *          work_dim de clEnqueueNDRangeKernel() est un tableau size_t
-     *          avec les dimensions width et height.
-     *
-     *       3. Attendre que le noyau termine avec clFinish()
-     *
-     *       4. Copier le resultat dans la structure sinoscope_t avec
-     *          clEnqueueReadBuffer() de maniere synchrone
-     *
-     *       Utilisez ERR_THROW partout pour gerer systematiquement les exceptions
-     */
-
     cl_int ret = 0;
+
+    clSetKernelArg(kernel, 0, sizeof(output), &output);
+    sinoscope_t b = *ptr;
+    size_t* workSize = (size_t*)malloc(2*sizeof(size_t));
+    workSize[0] = b.width;
+    workSize[1] = b.height;
+    ret = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, workSize, workSize, 0, NULL, NULL);
+    ERR_THROW(CL_SUCCESS, ret, "clEnqueueNDRangeKernel failed");
+    ret = clFinish(queue);
+    ERR_THROW(CL_SUCCESS, ret, "clFinish failed");
+    ret = clEnqueueReadBuffer(queue, output, CL_FALSE, 0, *workSize, b.buf, 0, NULL, NULL);
+    ERR_THROW(CL_SUCCESS, ret, "clEnqueueReadBuffer failed");
     cl_event ev;
 
     if (ptr == NULL)

@@ -5,15 +5,6 @@
  *      Author: francis
  */
 
-/*
- * FIXME: Determinez les arguments a passer au noyau
- *        Le code de la fonction value_color doit etre recopie dans ce fichier et adapte
- *
- *        Pour traiter des type de donnees char, le pragma suivant doit etre utilise:
- *        #pragma OPENCL EXTENSION cl_khr_byte_addressable_store: enable
- */
-
-
 #define M_PI 3.1416f
 
 typedef struct sinoscope sinoscope_t;
@@ -32,6 +23,7 @@ struct sinoscope {
 	float dx;
 	float dy;
 };
+__global sinoscope_t * sinoscope_data;
 
 struct rgb {
 	unsigned char r;
@@ -85,7 +77,25 @@ void value_color(struct rgb *color, float value, int interval, float interval_in
 	*color = c;
 }
 
-__kernel void sinoscope_kernel()
+__kernel void sinoscope_kernel(__global const float* out)
 {
-	// TODO
+  int x = get_global_id(0);
+  int y = get_global_id(1);
+  int index, taylor;
+  float px = sinoscope_data.dx * y - 2 * M_PI;
+  float py = sinoscope_data.dy * x - 2 * M_PI;
+  float val = 0.0f;
+
+  for (int taylor = 1; taylor <= sinoscope_data.taylor; taylor += 2) 
+  {
+    val += sin(px * taylor * sinoscope_data.phase1 + sinoscope_data.time) / taylor + cos(py * taylor * sinoscope_data.phase0) / taylor;
+  }
+
+  val = (atan(1.0 * val) - atan(-1.0 * val)) / (M_PI);
+  val = (val + 1) * 100;
+  value_color(&c, val, sinoscope_data.interval, sinoscope_data.interval_inv);
+  index = (y * 3) + (x * 3) * sinoscope_data.width;
+  out[index + 0] = c.r;
+  out[index + 1] = c.g;
+  out[index + 2] = c.b;
 }

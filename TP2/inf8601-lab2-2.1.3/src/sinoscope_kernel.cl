@@ -77,7 +77,7 @@ void value_color(struct rgb *color, float value, int interval, float interval_in
 	*color = c;
 }
 
-__kernel void sinoscope_kernel(int taylor,float phase0,float phase1,int interval,float interval_inv,int width,float time,float dx, float dy, __global float* out)
+__kernel void sinoscope_kernel(int taylorCL,float phase0,float phase1,int interval,float interval_inv,int width,float time,float dx, float dy, __global float* out)
 {
   int x = get_global_id(0);
   int y = get_global_id(1);

@@ -195,9 +195,9 @@ int sinoscope_image_opencl(sinoscope_t *ptr)
     size_t* worksize = (size_t*)malloc(2*sizeof(size_t));
     worksize[0] = b.width;
     worksize[1] = b.height;
-    /*
+
     ret = clSetKernelArg(kernel, 0, sizeof(int), &b.taylor);
-    //ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 1");
+    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 1");
     ret |= clSetKernelArg(kernel, 1, sizeof(float), &b.phase0);
     ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 2");
     ret |= clSetKernelArg(kernel, 2, sizeof(float), &b.phase1);
@@ -216,7 +216,7 @@ int sinoscope_image_opencl(sinoscope_t *ptr)
     ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 9");
     ret |= clSetKernelArg(kernel, 9, sizeof(float), &output);
     ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 10");
-*/
+
 
     ret = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, worksize, worksize, 0, NULL, NULL);
     ERR_THROW(CL_SUCCESS, ret, "clEnqueueNDRangeKernel failed");

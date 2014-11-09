@@ -4,8 +4,9 @@
  *  Created on: 2011-10-14
  *      Author: francis
  */
-
+#ifndef M_PI
 #define M_PI 3.1416f
+#endif
 
 typedef struct sinoscope sinoscope_t;
 
@@ -23,7 +24,6 @@ struct sinoscope {
 	float dx;
 	float dy;
 };
-__global sinoscope_t * sinoscope_data;
 
 struct rgb {
 	unsigned char r;
@@ -77,8 +77,9 @@ void value_color(struct rgb *color, float value, int interval, float interval_in
 	*color = c;
 }
 
-__kernel void sinoscope_kernel(int taylorCL,float phase0,float phase1,int interval,float interval_inv,int width,float time,float dx, float dy, __global float* out)
+__kernel void sinoscope_kernel(int taylor,float phase0,float phase1,int interval,float interval_inv,int width,float time,float dx, float dy, __global float* out)
 {
+  struct rgb c;
   int x = get_global_id(0);
   int y = get_global_id(1);
   int index, taylorCL;

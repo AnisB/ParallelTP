@@ -17,7 +17,7 @@ extern "C" {
 #include "memory.h"
 #include "util.h"
 }
-
+#include <iostream>
 #include "CL/opencl.h"
 #include "sinoscope_opencl.h"
 
@@ -182,8 +182,8 @@ void opencl_shutdown()
     if (queue) 	clReleaseCommandQueue(queue);
     if (context)	clReleaseContext(context);
     
-    if(kernel) clReleaseKernel(kernel);
-    if(output) clReleaseMemObject(output);
+    if (kernel) clReleaseKernel(kernel);
+    if (output) clReleaseMemObject(output);
 
 }
 

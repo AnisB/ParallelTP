@@ -1,3 +1,4 @@
+
 /*
  * sinoscope_opencl.c
  *
@@ -136,13 +137,8 @@ int create_buffer(int width, int height)
 {
     cl_int ret;
     output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, width*height, NULL, &ret);
-    ERR_THROW(CL_SUCCESS, ret, "clCreateBuffer failed");
-    goto error;
-done:
+    //ERR_THROW(CL_SUCCESS, ret, "clCreateBuffer failed");
     return ret;
-error:
-    ret = -1;
-    goto done;
 }
 
 int opencl_init(int width, int height)
@@ -167,8 +163,8 @@ int opencl_init(int width, int height)
     ERR_THROW(CL_SUCCESS, err, "clBuildProgram failed");
     kernel = clCreateKernel(prog, "sinoscope_kernel", &err);
     ERR_THROW(CL_SUCCESS, err, "clCreateKernel failed");
-    err = create_buffer(width, height);
-    ERR_THROW(CL_SUCCESS, err, "create_buffer failed");
+    //err = create_buffer(width, height);
+    //ERR_THROW(CL_SUCCESS, err, "create_buffer failed");
 
     free(code);
     return 0;
@@ -190,17 +186,30 @@ void opencl_shutdown()
 int sinoscope_image_opencl(sinoscope_t *ptr)
 {
     cl_int ret = 0;
-
-    clSetKernelArg(kernel, 0, sizeof(output), &output);
     sinoscope_t b = *ptr;
-    size_t* workSize = (size_t*)malloc(2*sizeof(size_t));
-    workSize[0] = b.width;
-    workSize[1] = b.height;
-    ret = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, workSize, workSize, 0, NULL, NULL);
+
+    size_t* worksize = (size_t*)malloc(2*sizeof(size_t));
+    worksize[0] = b.width;
+    worksize[1] = b.height;
+    
+    ret = clSetKernelArg(kernel, 0, sizeof(int), &b.taylor);
+    ret |= clSetKernelArg(kernel, 1, sizeof(float), &b.phase0);
+    ret |= clSetKernelArg(kernel, 2, sizeof(float), &b.phase1);
+    ret |= clSetKernelArg(kernel, 3, sizeof(int), &b.interval);
+    ret |= clSetKernelArg(kernel, 4, sizeof(float), &b.interval);
+    ret |= clSetKernelArg(kernel, 5, sizeof(int), &b.width);
+    ret |= clSetKernelArg(kernel, 6, sizeof(float), &b.time);
+    ret |= clSetKernelArg(kernel, 7, sizeof(float), &b.dx);
+    ret |= clSetKernelArg(kernel, 8, sizeof(float), &b.dy);
+    ret |= clSetKernelArg(kernel, 9, sizeof(float), &output);
+    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed");
+
+
+    ret = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, worksize, worksize, 0, NULL, NULL);
     ERR_THROW(CL_SUCCESS, ret, "clEnqueueNDRangeKernel failed");
     ret = clFinish(queue);
     ERR_THROW(CL_SUCCESS, ret, "clFinish failed");
-    ret = clEnqueueReadBuffer(queue, output, CL_FALSE, 0, *workSize, b.buf, 0, NULL, NULL);
+    ret = clEnqueueReadBuffer(queue, output, CL_FALSE, 0, *worksize, b.buf, 0, NULL, NULL);
     ERR_THROW(CL_SUCCESS, ret, "clEnqueueReadBuffer failed");
     cl_event ev;
 

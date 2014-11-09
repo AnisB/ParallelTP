@@ -77,24 +77,24 @@ void value_color(struct rgb *color, float value, int interval, float interval_in
 	*color = c;
 }
 
-__kernel void sinoscope_kernel(__global const float* out)
+__kernel void sinoscope_kernel(const int taylor, const float phase0, const float phase1, const int interval, const float interval_inv, const int width, const float time, const float dx, const float dy, __global float* out)
 {
   int x = get_global_id(0);
   int y = get_global_id(1);
-  int index, taylor;
-  float px = sinoscope_data.dx * y - 2 * M_PI;
-  float py = sinoscope_data.dy * x - 2 * M_PI;
+  int index, taylorCL;
+  float px = dx * y - 2 * M_PI;
+  float py = dy * x - 2 * M_PI;
   float val = 0.0f;
 
-  for (int taylor = 1; taylor <= sinoscope_data.taylor; taylor += 2) 
+  for (taylorCL = 1; taylorCL <= taylor; taylorCL += 2) 
   {
-    val += sin(px * taylor * sinoscope_data.phase1 + sinoscope_data.time) / taylor + cos(py * taylor * sinoscope_data.phase0) / taylor;
+    val += sin(px * taylorCL * phase1 + time) / taylorCL + cos(py * taylorCL * phase0) / taylorCL;
   }
 
   val = (atan(1.0 * val) - atan(-1.0 * val)) / (M_PI);
   val = (val + 1) * 100;
-  value_color(&c, val, sinoscope_data.interval, sinoscope_data.interval_inv);
-  index = (y * 3) + (x * 3) * sinoscope_data.width;
+  value_color(&c, val, interval, interval_inv);
+  index = (y * 3) + (x * 3) * width;
   out[index + 0] = c.r;
   out[index + 1] = c.g;
   out[index + 2] = c.b;

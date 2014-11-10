@@ -31,9 +31,6 @@ static cl_context context = NULL;
 static cl_program prog = NULL;
 static cl_kernel kernel = NULL;
 
-/*
- * TODO: Declarer un espace memoire pour le rendu de l'image de type cl_mem
- */
 static cl_mem output = NULL;
 
 int get_opencl_queue()
@@ -136,8 +133,9 @@ error:
 int create_buffer(int width, int height)
 {
     cl_int ret;
-    output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, width*height, NULL, &ret);
-    ERR_THROW(CL_SUCCESS, ret, "clCreateBuffer failed");
+    output = clCreateBuffer(context, CL_MEM_WRITE_ONLY, width*height*sizeof(char)*3, NULL, &ret);
+    ERR_THROW(CL_SUCCESS, ret, "clCreateBuffer failed 0");
+    
 done:
     return ret;
 error:
@@ -179,52 +177,42 @@ error:
 
 void opencl_shutdown()
 {
-    if (queue) 	clReleaseCommandQueue(queue);
-    if (context)	clReleaseContext(context);
-    
-    if (kernel) clReleaseKernel(kernel);
     if (output) clReleaseMemObject(output);
-
+	if (prog) clReleaseProgram (prog);
+    if (queue) 	clReleaseCommandQueue(queue);
+    if (kernel) clReleaseKernel(kernel);
+    if (context) clReleaseContext(context);
 }
 
 int sinoscope_image_opencl(sinoscope_t *ptr)
 {
     cl_int ret = 0;
+    cl_event ev;
     sinoscope_t b = *ptr;
-
-    size_t* worksize = (size_t*)malloc(2*sizeof(size_t));
+    size_t worksize[2];
     worksize[0] = b.width;
     worksize[1] = b.height;
-
-    ret = clSetKernelArg(kernel, 0, sizeof(int), &b.taylor);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 1");
-    ret |= clSetKernelArg(kernel, 1, sizeof(float), &b.phase0);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 2");
-    ret |= clSetKernelArg(kernel, 2, sizeof(float), &b.phase1);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 3");
-    ret |= clSetKernelArg(kernel, 3, sizeof(int), &b.interval);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 4");
-    ret |= clSetKernelArg(kernel, 4, sizeof(float), &b.interval);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 5");
-    ret |= clSetKernelArg(kernel, 5, sizeof(int), &b.width);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 6");
-    ret |= clSetKernelArg(kernel, 6, sizeof(float), &b.time);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 7");
-    ret |= clSetKernelArg(kernel, 7, sizeof(float), &b.dx);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 8");
-    ret |= clSetKernelArg(kernel, 8, sizeof(float), &b.dy);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 9");
-    ret |= clSetKernelArg(kernel, 9, sizeof(float), &output);
-    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed 10");
-
-
-    ret = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, worksize, worksize, 0, NULL, NULL);
+    
+	ret = clSetKernelArg(kernel, 0, sizeof(output), &output);
+	ret |= clSetKernelArg(kernel, 1, sizeof(int), &(b.width));
+	ret |= clSetKernelArg(kernel, 2, sizeof(int), &(b.interval));
+	ret |= clSetKernelArg(kernel, 3, sizeof(int), &(b.taylor));
+	ret |= clSetKernelArg(kernel, 4, sizeof(float), &(b.interval_inv));
+	ret |= clSetKernelArg(kernel, 5, sizeof(float), &(b.time));
+	ret |= clSetKernelArg(kernel, 6, sizeof(float), &(b.phase0));
+	ret |= clSetKernelArg(kernel, 7, sizeof(float), &(b.phase1));
+	ret |= clSetKernelArg(kernel, 8, sizeof(float), &(b.dx));
+	ret |= clSetKernelArg(kernel, 9, sizeof(float), &(b.dy));
+    ERR_THROW(CL_SUCCESS, ret, "clSetKernelArg failed");
+    
+    ret = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, worksize, NULL, 0, NULL, NULL);
     ERR_THROW(CL_SUCCESS, ret, "clEnqueueNDRangeKernel failed");
+    
     ret = clFinish(queue);
     ERR_THROW(CL_SUCCESS, ret, "clFinish failed");
-    ret = clEnqueueReadBuffer(queue, output, CL_FALSE, 0, *worksize, b.buf, 0, NULL, NULL);
+    
+    ret = clEnqueueReadBuffer(queue, output, CL_TRUE, 0, b.buf_size, b.buf, 0, NULL, NULL);
     ERR_THROW(CL_SUCCESS, ret, "clEnqueueReadBuffer failed");
-    cl_event ev;
 
     if (ptr == NULL)
         goto error;

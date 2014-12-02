@@ -214,39 +214,48 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 	ctx->reorder = 0;
 	grid_t *new_grid = NULL;
 
-	/* FIXME: create 2D cartesian communicator */
-
+	MPI_Cart_create(MPI_COMM_WORLD, 2, ctx->dims, ctx->isperiodic, ctx->recorder, &ctx->comm2d);
 	/*
 	 * FIXME: le processus rank=0 charge l'image du disque
 	 * et transfert chaque section aux autres processus
 	 */
 
-	/* load input image */
-	image_t *image = load_png(opts->input);
-	if (image == NULL)
-		goto err;
+	if(ctx->rank == 0)
+	{
+	  /* load input image */
+	  image_t *image = load_png(opts->input);
+	  if (image == NULL)
+	    goto err;
+	  
+	  /* select the red channel as the heat source */
+	  ctx->global_grid = grid_from_image(image, CHAN_RED);
+	  
+	  /* grid is normalized to one, multiply by MAX_TEMP */
+	  grid_multiply(ctx->global_grid, MAX_TEMP);
+	  
+	  /* 2D decomposition */
+	  ctx->cart = make_cart2d(ctx->global_grid->width,
+				  ctx->global_grid->height, opts->dimx, opts->dimy);
+	  cart2d_grid_split(ctx->cart, ctx->global_grid);
 
-	/* select the red channel as the heat source */
-	ctx->global_grid = grid_from_image(image, CHAN_RED);
-
-	/* grid is normalized to one, multiply by MAX_TEMP */
-	grid_multiply(ctx->global_grid, MAX_TEMP);
-
-	/* 2D decomposition */
-	ctx->cart = make_cart2d(ctx->global_grid->width,
-			ctx->global_grid->height, opts->dimx, opts->dimy);
-	cart2d_grid_split(ctx->cart, ctx->global_grid);
-
-	/*
-	 * FIXME: send grid dimensions and data
-	 * Comment traiter le cas de rank=0 ?
-	 */
-
-	/*
-	 * FIXME: receive dimensions of the grid
-	 * store into new_grid
-	 */
-
+	  if(ctx->numprocs == 0)
+	  {
+	    
+	  }
+	}
+	else
+	{
+	  
+	  /*
+	   * FIXME: send grid dimensions and data
+	   * Comment traiter le cas de rank=0 ?
+	   */
+	  
+	  /*
+	   * FIXME: receive dimensions of the grid
+	   * store into new_grid
+	   */
+        }
 	/* Utilisation temporaire de global_grid */
 	new_grid = ctx->global_grid;
 

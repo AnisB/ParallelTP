@@ -2,7 +2,7 @@
 #
 #These commands set up the Grid Environment for your job:
 #PBS -N job-heatsim-cart
-#PBS -q recherche
+#PBS -q ens
 #PBS -j oe
 #PBS -l nodes=16:ppn=8
 

@@ -221,14 +221,10 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 	MPI_Cart_shift(ctx->comm2d, 0, 1, &ctx->west_peer, &ctx->east_peer);
 	MPI_Cart_coords(ctx->comm2d, ctx->rank, DIM_2D, ctx->coords);
 
-	// Allocation des requests et status
-    size_t nbSends = 4*(nbProcess-1);
-    MPI_Request *req = calloc(nbSends, sizeof(MPI_Request));
-    MPI_Status *status = calloc(nbSends, sizeof(MPI_Status));
-	printf("Hi\n");
+	
+	// Si on est dans le main process
 	if(ctx->rank == 0)
 	{
-		printf("Hi father\n");
 	  /* load input image */
 	  image_t *image = load_png(opts->input);
 	  if (image == NULL)
@@ -244,60 +240,67 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 	  ctx->cart = make_cart2d(ctx->global_grid->width,
 				  ctx->global_grid->height, opts->dimx, opts->dimy);
 	  cart2d_grid_split(ctx->cart, ctx->global_grid);
-
+	  
 	  if(nbProcess > 1)
 	  {
+		// Nombre de requetes
+		int nbSends = 4*(nbProcess-1);
+		
+		// Allocation des primitives MPI pour la communication
+		MPI_Request *req = calloc(nbSends, sizeof(MPI_Request));
+		MPI_Status *status = calloc(nbSends, sizeof(MPI_Status));
+		
 	    int process_index;
 	    for(process_index = 1; process_index < nbProcess; ++process_index)
 	    {
+	    	// Recuperation des coordonnées du process
 			int processCoordinates[DIM_2D];
 			MPI_Cart_coords(ctx->comm2d, process_index, DIM_2D, processCoordinates);	
+			// Recuperation de la grille
 			grid_t *grid = cart2d_get_grid(ctx->cart, processCoordinates[0], processCoordinates[1]);	
-
+			//Caching du shift pour ce processus
 			int process_shift = 4*(process_index-1);
-			printf("Before send\n");
+			// Envoi des tailles et du padding 
 			MPI_Isend(&grid->width, 1, MPI_INTEGER, process_index, process_shift, ctx->comm2d, req + process_shift);
-			printf("Un envoi\n");
 			MPI_Isend(&grid->height, 1, MPI_INTEGER, process_index, process_shift + 1, ctx->comm2d, req + process_shift+1);
-			printf("Deux\n");
 			MPI_Isend(&grid->padding, 1 , MPI_INTEGER, process_index, process_shift + 2, ctx->comm2d, req + process_shift+2);
-			printf("Trois\n");
-	      		MPI_Isend(grid->dbl, grid->pw*grid->ph, MPI_DOUBLE, process_index, process_shift + 3, ctx->comm2d, req + process_shift+3);
-	    		printf("Quatre\n");
+			// Envoi de la grille
+	      	MPI_Isend(grid->dbl, grid->pw*grid->ph, MPI_DOUBLE, process_index, process_shift + 3, ctx->comm2d, req + process_shift+3);
 	    }
-	    int coords[DIM_2D];
-	    printf("Attente des envois\n");
 	    MPI_Waitall(nbSends, req, status);
-	    MPI_Cart_coords(ctx->comm2d, ctx->rank, DIM_2D, coords);
-	    new_grid = cart2d_get_grid(ctx->cart, coords[0], coords[1]);
-	    printf("Envois faits\n");
+	   	free(req);
+	    free(status);
 	  }
-	  free(req);
-	  free(status);
+	  // Calcul de la grille du main process
+ 	  int mainProcess_coords[DIM_2D];
+	  MPI_Cart_coords(ctx->comm2d, ctx->rank, DIM_2D, mainProcess_coords);
+	  new_grid = cart2d_get_grid(ctx->cart, mainProcess_coords[0], mainProcess_coords[1]);
+
 	}
 	else
-	{
-		printf("Hi others %i\n",ctx->rank);
+	{	  
+		// Allocation des resources pour la reception des données
+	    MPI_Request req[4];
+        MPI_Status status[4];
+        
+        // Reception des tailles et padding
 		int width, height, padding;
 		int rank = (ctx->rank-1)*4;
 		MPI_Irecv(&width, 1, MPI_INTEGER, 0, rank+0, ctx->comm2d, &req[0]);
 		MPI_Irecv(&height, 1, MPI_INTEGER, 0, rank+1, ctx->comm2d, &req[1]);
 		MPI_Irecv(&padding, 1, MPI_INTEGER, 0, rank+2, ctx->comm2d, &req[2]);
-		printf("Recieve A  %i\n", ctx->rank);
 		MPI_Waitall(3, req, status);
-		printf("A is done %i\n", ctx->rank);		
+		
+		// Tailles recues => creation de la grille	
 		new_grid = make_grid(width, height, padding);
-		MPI_Irecv(new_grid->dbl, new_grid->pw*new_grid->ph, MPI_DOUBLE, 0, rank+3, ctx->comm2d, &req[0]);
-		printf("Receptions lancées %i\n", ctx->rank);
-		MPI_Waitall(1, req, status);
-		printf("B is done %i \n", ctx->rank);  
- 
+		// Reception grille
+		MPI_Irecv(new_grid->dbl, new_grid->pw*new_grid->ph, MPI_DOUBLE, 0, rank+3, ctx->comm2d, &req[3]);
+		MPI_Waitall(1, req+3, status+3);
     }
-	/* Utilisation temporaire de global_grid */
-	//	new_grid = ctx->global_grid;
 
 	if (new_grid == NULL)
 		goto err;
+		
 	/* set padding required for Runge-Kutta */
 	ctx->curr_grid = grid_padding(new_grid, 1);
 	ctx->next_grid = grid_padding(new_grid, 1);
@@ -305,9 +308,6 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 
 	MPI_Type_vector(ctx->curr_grid->height, 1, ctx->curr_grid->pw, MPI_DOUBLE, &ctx->vector);
 	MPI_Type_commit(&ctx->vector);
-	printf("Init done\n");
-	free(req);
-	free(status);
 
 	return 0;
 	err: return -1;
@@ -324,94 +324,103 @@ void dump_ctx(ctx_t *ctx) {
 
 void exchng2d(ctx_t *ctx) 
 {
-	//grid_t *grid = ctx->next_grid;
+	// Recuperation des données de la grille courante
 	grid_t *grid = ctx->curr_grid;
-	int width = grid->pw;
-	int height = grid->ph;
+	int Global_width = grid->width;
+	int process_width = grid->pw;
+	int processs_height = grid->ph;
+	int padding =  grid->padding;
 	double *data = grid->dbl;
 	MPI_Comm comm = ctx->comm2d;
+	
+	// Primitives MPI pour la communication
 	MPI_Request req[8];
 	MPI_Status status[8];
 	 
-    printf("Exchange %i\n", ctx->rank);
-    MPI_Irecv(data + 1 + (height - 1) * width, width, MPI_DOUBLE, ctx->south_peer, 0, comm, &req[1]);
-    MPI_Irecv(data + 1, width, MPI_DOUBLE, ctx->north_peer, 1, comm, &req[0]);
+	// Calcul des decalages pour chacun des échanges entre voisins
+    double* north_send = data + (process_width+1)*padding;
+    double* north_rec = north_send - process_width;
+    
+	double *south_send = data + processs_height*process_width -(padding + 1)*process_width + padding;
+	double *south_recv = south_send + process_width;
+	
+	double *east_send = north_send + Global_width- 1;
+	double *east_recv = east_send +1;
+	
+	double *west_send = north_send;
+	double *west_recv = west_send - 1;
+    
+    // Envois et receptions entre voisins
+    MPI_Irecv(north_rec, Global_width, MPI_DOUBLE, ctx->north_peer, 0, comm, req);
+    MPI_Irecv(south_recv, Global_width, MPI_DOUBLE, ctx->south_peer, 1, comm, req+1);
+    MPI_Irecv(west_recv, 1, ctx->vector, ctx->west_peer, 2, comm, req + 2);
+    MPI_Irecv(east_recv, 1, ctx->vector, ctx->east_peer, 3, comm, req + 3);
+    
+    MPI_Isend(north_send, Global_width, MPI_DOUBLE, ctx->north_peer, 1, comm, req + 4);
+    MPI_Isend(south_send, Global_width, MPI_DOUBLE, ctx->south_peer, 0, comm, req + 5 );
+    MPI_Isend(west_send, 1, ctx->vector, ctx->west_peer, 3, comm, req + 6);
+    MPI_Isend(east_send, 1, ctx->vector, ctx->east_peer, 2, comm, req + 7 );
 
-    MPI_Isend(data + 1 + width, width, MPI_DOUBLE, ctx->north_peer, 0, comm, &req[3]);
-    MPI_Isend(data + 1 + (height - 2) * width, width, MPI_DOUBLE, ctx->south_peer, 1, comm, &req[2]);
-
-    MPI_Irecv(data + width, 1, ctx->vector, ctx->west_peer, 2, comm, &req[5]);
-    MPI_Irecv(data + (2*width - 1), 1, ctx->vector, ctx->east_peer, 3, comm, &req[4]);
-
-    MPI_Isend(data + (2*width - 2), 1, ctx->vector, ctx->east_peer, 2, comm, &req[7]);
-    MPI_Isend(data + width + 1, 1, ctx->vector, ctx->west_peer, 3, comm, &req[6]);
-    printf("Will be waiting %i\n", ctx->rank);
-   MPI_Waitall(8, req, status);
-   printf("Exchange done %i\n", ctx->rank);
+	// Attente de la fin des opérations
+    MPI_Waitall(8, req, status);
 }
 
 int gather_result(ctx_t *ctx, opts_t *opts) 
 {
 
-	// int ret = 0;
-	// grid_t *local_grid = grid_padding(ctx->next_grid, 0);
-	// if (local_grid == NULL)
-	// 	goto err;
-
-	
-	//  * FIXME: transfer simulation results from all process to rank=0
-	//  * use grid for this purpose
-	 
-
-	// /* now we can merge all data blocks, reuse global_grid */
-	// //cart2d_grid_merge(ctx->cart, ctx->global_grid);
-	// /* temporairement copie de next_grid */
-	// grid_copy(ctx->next_grid, ctx->global_grid);
-
-    int ret = 0, rankRec;
-    int coords[2];
+    int ret = 0;
+    
     grid_t* grille;
     grid_t *local_grid = grid_padding(ctx->next_grid, 0);
-    MPI_Request *req;
-    MPI_Status *status;
     if (local_grid == NULL)
         goto err;
 
-    /* temporairement copie de next_grid */
-    if(ctx->numprocs < 2)
-    {
-        grid_copy(ctx->next_grid, ctx->global_grid);
-        goto done;
-    }
-
-    /*
-     * FIXME: transfer simulation results from all process to rank=0
-     * use grid for this purpose
-     */
     if(ctx->rank == 0)
     {
-        req = (MPI_Request *) calloc(ctx->numprocs-1, sizeof(MPI_Request));
-        status = (MPI_Status *) calloc(ctx->numprocs-1, sizeof(MPI_Status));
-        for (rankRec = 1; rankRec < ctx->numprocs; rankRec++)
+      int nbSecondProcess = ctx->numprocs-1;
+	  if(nbSecondProcess != 0)
+	  {
+    	// Nombre de processus autre que le main
+    	
+    	// Allocation des primitives de communication MPI
+        MPI_Request *req = (MPI_Request *) calloc(nbSecondProcess, sizeof(MPI_Request));
+        MPI_Status *status = (MPI_Status *) calloc(nbSecondProcess, sizeof(MPI_Status));
+        
+        // Pour chacun des autres processus
+        int process_index;
+        for (process_index = 1; process_index <= nbSecondProcess; ++process_index)
         {
-            MPI_Cart_coords(ctx->comm2d, rankRec, 2, &coords[0]);
-            grille = cart2d_get_grid(ctx->cart, coords[0], coords[1]);
-            MPI_Irecv(grille->dbl, grille->width*grille->height, MPI_DOUBLE, rankRec, 2, ctx->comm2d, &req[rankRec-1]);
+        	// On récupère les coordonnées
+        	int processCoordinates[2];
+            MPI_Cart_coords(ctx->comm2d, process_index, DIM_2D, processCoordinates);
+            // On récupère la grille
+            grille = cart2d_get_grid(ctx->cart, processCoordinates[0], processCoordinates[1]);
+            // On recoit la grille de ce processus
+            MPI_Irecv(grille->dbl, grille->width*grille->height, MPI_DOUBLE, process_index, DIM_2D, ctx->comm2d, req + process_index-1);
         }
-        MPI_Waitall(ctx->numprocs - 1, req, status);
-        MPI_Cart_coords(ctx->comm2d, 0, 2, &coords[0]);
-        grille = cart2d_get_grid(ctx->cart, coords[0], coords[1]);
-        grid_copy(ctx->next_grid, grille);
-        // now we can merge all data blocks, reuse global_grid
-        cart2d_grid_merge(ctx->cart, ctx->global_grid);
+        MPI_Waitall(nbSecondProcess, req, status);
+        free(req);
+        free(status);
+      }
+      // On récupère les coordonnées du main process
+      int mainProcess_coords[DIM_2D];
+      MPI_Cart_coords(ctx->comm2d, ctx->rank, DIM_2D, mainProcess_coords);
+      // On récupère la grille du main process
+      grille = cart2d_get_grid(ctx->cart, mainProcess_coords[0], mainProcess_coords[1]);
+      grid_copy(ctx->next_grid, grille);
+      // On merge le tout
+      cart2d_grid_merge(ctx->cart, ctx->global_grid);
     }
     else
     {
-        req = (MPI_Request *) malloc(sizeof(MPI_Request));
-        status = (MPI_Status *) malloc(sizeof(MPI_Status));
+    	// Primitives de comunication MPI
+        MPI_Request req;
+        MPI_Status status;
+        // Récupération grille courante
         grille = grid_padding(ctx->next_grid, 0);
-        MPI_Isend(grille->dbl, grille->height*grille->width, MPI_DOUBLE, 0, 2, ctx->comm2d, req);
-        MPI_Waitall(1, req, status);
+        // Envoi non bloqant au process principal
+        MPI_Isend(grille->dbl, grille->height*grille->width, MPI_DOUBLE, 0, DIM_2D, ctx->comm2d, &req);
+        MPI_Waitall(1, &req, &status);
     }
     
 	done: free_grid(local_grid);

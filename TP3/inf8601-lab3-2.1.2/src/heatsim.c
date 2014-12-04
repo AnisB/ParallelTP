@@ -196,7 +196,7 @@ void free_ctx(ctx_t *ctx) {
 }
 
 int init_ctx(ctx_t *ctx, opts_t *opts) {
-	TODO("lab3");
+
 	MPI_Comm_size(MPI_COMM_WORLD, &ctx->numprocs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &ctx->rank);
 
@@ -213,7 +213,8 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 	ctx->isperiodic[1] = 1;
 	ctx->reorder = 0;
 	grid_t *new_grid = NULL;
-
+	size_t nbProcess = ctx->numprocs;
+	
 	MPI_Cart_create(MPI_COMM_WORLD, 2, ctx->dims, ctx->isperiodic, ctx->recorder, &ctx->comm2d);
 	/*
 	 * FIXME: le processus rank=0 charge l'image du disque
@@ -238,23 +239,25 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 				  ctx->global_grid->height, opts->dimx, opts->dimy);
 	  cart2d_grid_split(ctx->cart, ctx->global_grid);
 
-	  if(ctx->numprocs == 0)
+	  if(nbProcess > 1)
 	  {
-	    
+	    size_t nbSends = 2*(nbProcess-1);
+	    MPI_Request *req = calloc(nbSends, sizeof(MPI_Request));
+	    MPI_Status *status = calloc(nbSends, sizeof(MPI_Status));
+	    for(int process_index = 1; process_index < nbProcess; ++process_index)
+	    {
+	      //MPI_ISend(const void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request);
+	      MPI_ISend(,1 , MPI_INTEGER, process_index, MPI_ANY_TAG, ctx->comm2d, req + 2*(process_index-1));
+	      MPI_ISend(, , MPI_DOUBLE, process_index, MPI_ANY_TAG, ctx->comm2D, req + 2*(process_index-1)+1);
+	    }
+	    MPI_Waitall(nbSends, req, status);
 	  }
+	  free(req);
+	  free(status);
 	}
 	else
 	{
-	  
-	  /*
-	   * FIXME: send grid dimensions and data
-	   * Comment traiter le cas de rank=0 ?
-	   */
-	  
-	  /*
-	   * FIXME: receive dimensions of the grid
-	   * store into new_grid
-	   */
+	   
         }
 	/* Utilisation temporaire de global_grid */
 	new_grid = ctx->global_grid;

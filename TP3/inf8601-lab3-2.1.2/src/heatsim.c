@@ -215,11 +215,16 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 	grid_t *new_grid = NULL;
 	size_t nbProcess = ctx->numprocs;
 	
-	MPI_Cart_create(MPI_COMM_WORLD, 2, ctx->dims, ctx->isperiodic, ctx->recorder, &ctx->comm2d);
-	/*
-	 * FIXME: le processus rank=0 charge l'image du disque
-	 * et transfert chaque section aux autres processus
-	 */
+	// Creation de la carte cartésienne
+	MPI_Cart_create(MPI_COMM_WORLD, DIM_2D, ctx->dims, ctx->isperiodic, ctx->reorder, &ctx->comm2d);
+	MPI_Cart_shift(ctx->comm2d, 1, 1, &ctx->north_peer, &ctx->south_peer);
+	MPI_Cart_shift(ctx->comm2d, 0, 1, &ctx->west_peer, &ctx->east_peer);
+	MPI_Cart_coords(ctx->comm2d, ctx->rank, DIM_2D, ctx->coords);
+
+	// Allocation des requests et status
+    size_t nbSends = 4*(nbProcess-1);
+    MPI_Request *req = calloc(nbSends, sizeof(MPI_Request));
+    MPI_Status *status = calloc(nbSends, sizeof(MPI_Status));
 
 	if(ctx->rank == 0)
 	{
@@ -241,14 +246,18 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 
 	  if(nbProcess > 1)
 	  {
-	    size_t nbSends = 2*(nbProcess-1);
-	    MPI_Request *req = calloc(nbSends, sizeof(MPI_Request));
-	    MPI_Status *status = calloc(nbSends, sizeof(MPI_Status));
+
 	    for(int process_index = 1; process_index < nbProcess; ++process_index)
 	    {
-	      //MPI_ISend(const void* buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm, MPI_Request *request);
-	      MPI_ISend(,1 , MPI_INTEGER, process_index, MPI_ANY_TAG, ctx->comm2d, req + 2*(process_index-1));
-	      MPI_ISend(, , MPI_DOUBLE, process_index, MPI_ANY_TAG, ctx->comm2D, req + 2*(process_index-1)+1);
+			int processCoordinates[DIM_2D];
+			MPI_Cart_coords(ctx->comm2d, rank, DIM_2D, processCoordinates);	
+			grid_t *grid = cart2d_get_grid(ctx->cart, processCoordinates[0], processCoordinates[1]);	
+
+			int process_shift = 4*(process_index-1);
+			MPI_ISend(grid->width, 1, MPI_INTEGER, process_index, process_shift, ctx->comm2d, req + process_shift);
+			MPI_ISend(grid->height, 1, MPI_INTEGER, process_index, process_shift + 1, ctx->comm2d, req + process_shift+1);
+			MPI_ISend(grid->padding, 1 , MPI_INTEGER, process_index, process_shift + 2, ctx->comm2d, req + process_shift+2);
+	      	MPI_ISend(grid->dbl, new_grid->pw*new_grid->ph*, MPI_DOUBLE, process_shift + 3, MPI_ANY_TAG, ctx->comm2D, req + process_shift+3);
 	    }
 	    MPI_Waitall(nbSends, req, status);
 	  }
@@ -257,8 +266,17 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 	}
 	else
 	{
-	   
-        }
+		int width, height, padding;
+		int rank = ctx->rank*4;
+		MPI_Irecv(&width, 1, MPI_INTEGER, 0, rank+0, ctx->comm2d, &req[0]);
+		MPI_Irecv(&height, 1, MPI_INTEGER, 0, rank+1, ctx->comm2d, &req[1]);
+		MPI_Irecv(&padding, 1, MPI_INTEGER, 0, rank+2, ctx->comm2d, &req[2]);
+		MPI_Waitall(3, req, status);
+		
+		new_grid = make_grid(width, height, padding);
+		MPI_Irecv(new_grid->dbl, new_grid->pw*new_grid->ph, MPI_DOUBLE, 0, rank+3, ctx->comm2d, &req[0]);
+		MPI_Waitall(1, req, status);   
+    }
 	/* Utilisation temporaire de global_grid */
 	new_grid = ctx->global_grid;
 
@@ -268,9 +286,12 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 	ctx->curr_grid = grid_padding(new_grid, 1);
 	ctx->next_grid = grid_padding(new_grid, 1);
 	ctx->heat_grid = grid_padding(new_grid, 1);
-	//free_grid(new_grid);
 
-	/* FIXME: create type vector to exchange columns */
+	MPI_Type_vector(ctx->curr_grid->height, 1, ctx->curr_grid->pw, MPI_DOUBLE, &ctx->vector);
+	MPI_Type_commit(&ctx->vector);
+
+	free(req);
+	free(status);
 
 	return 0;
 	err: return -1;

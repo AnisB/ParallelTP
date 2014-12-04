@@ -225,9 +225,10 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
     size_t nbSends = 4*(nbProcess-1);
     MPI_Request *req = calloc(nbSends, sizeof(MPI_Request));
     MPI_Status *status = calloc(nbSends, sizeof(MPI_Status));
-
+	printf("Hi\n");
 	if(ctx->rank == 0)
 	{
+		printf("Hi father\n");
 	  /* load input image */
 	  image_t *image = load_png(opts->input);
 	  if (image == NULL)
@@ -254,31 +255,46 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 			grid_t *grid = cart2d_get_grid(ctx->cart, processCoordinates[0], processCoordinates[1]);	
 
 			int process_shift = 4*(process_index-1);
+			printf("Before send\n");
 			MPI_Isend(&grid->width, 1, MPI_INTEGER, process_index, process_shift, ctx->comm2d, req + process_shift);
+			printf("Un envoi\n");
 			MPI_Isend(&grid->height, 1, MPI_INTEGER, process_index, process_shift + 1, ctx->comm2d, req + process_shift+1);
+			printf("Deux\n");
 			MPI_Isend(&grid->padding, 1 , MPI_INTEGER, process_index, process_shift + 2, ctx->comm2d, req + process_shift+2);
-	      	MPI_Isend(grid->dbl, new_grid->pw*new_grid->ph, MPI_DOUBLE, process_shift + 3, MPI_ANY_TAG, ctx->comm2d, req + process_shift+3);
+			printf("Trois\n");
+	      		MPI_Isend(grid->dbl, grid->pw*grid->ph, MPI_DOUBLE, process_index, process_shift + 3, ctx->comm2d, req + process_shift+3);
+	    		printf("Quatre\n");
 	    }
+	    int coords[DIM_2D];
+	    printf("Attente des envois\n");
 	    MPI_Waitall(nbSends, req, status);
+	    MPI_Cart_coords(ctx->comm2d, ctx->rank, DIM_2D, coords);
+	    new_grid = cart2d_get_grid(ctx->cart, coords[0], coords[1]);
+	    printf("Envois faits\n");
 	  }
 	  free(req);
 	  free(status);
 	}
 	else
 	{
+		printf("Hi others %i\n",ctx->rank);
 		int width, height, padding;
-		int rank = ctx->rank*4;
+		int rank = (ctx->rank-1)*4;
 		MPI_Irecv(&width, 1, MPI_INTEGER, 0, rank+0, ctx->comm2d, &req[0]);
 		MPI_Irecv(&height, 1, MPI_INTEGER, 0, rank+1, ctx->comm2d, &req[1]);
 		MPI_Irecv(&padding, 1, MPI_INTEGER, 0, rank+2, ctx->comm2d, &req[2]);
+		printf("Recieve A  %i\n", ctx->rank);
 		MPI_Waitall(3, req, status);
-		
+		printf("A is done %i\n", ctx->rank);		
 		new_grid = make_grid(width, height, padding);
 		MPI_Irecv(new_grid->dbl, new_grid->pw*new_grid->ph, MPI_DOUBLE, 0, rank+3, ctx->comm2d, &req[0]);
-		MPI_Waitall(1, req, status);   
+		printf("Receptions lancées %i\n", ctx->rank);
+		MPI_Waitall(1, req, status);
+		printf("B is done %i \n", ctx->rank);  
+ 
     }
 	/* Utilisation temporaire de global_grid */
-	new_grid = ctx->global_grid;
+	//	new_grid = ctx->global_grid;
 
 	if (new_grid == NULL)
 		goto err;
@@ -289,7 +305,7 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 
 	MPI_Type_vector(ctx->curr_grid->height, 1, ctx->curr_grid->pw, MPI_DOUBLE, &ctx->vector);
 	MPI_Type_commit(&ctx->vector);
-
+	printf("Init done\n");
 	free(req);
 	free(status);
 
@@ -308,28 +324,30 @@ void dump_ctx(ctx_t *ctx) {
 
 void exchng2d(ctx_t *ctx) 
 {
-	// grid_t *grid = ctx->next_grid;
+	//grid_t *grid = ctx->next_grid;
 	grid_t *grid = ctx->curr_grid;
 	int width = grid->pw;
 	int height = grid->ph;
-	int *data = grid->data;
+	double *data = grid->dbl;
 	MPI_Comm comm = ctx->comm2d;
 	MPI_Request req[8];
 	MPI_Status status[8];
 	 
+    printf("Exchange %i\n", ctx->rank);
     MPI_Irecv(data + 1 + (height - 1) * width, width, MPI_DOUBLE, ctx->south_peer, 0, comm, &req[1]);
     MPI_Irecv(data + 1, width, MPI_DOUBLE, ctx->north_peer, 1, comm, &req[0]);
 
     MPI_Isend(data + 1 + width, width, MPI_DOUBLE, ctx->north_peer, 0, comm, &req[3]);
     MPI_Isend(data + 1 + (height - 2) * width, width, MPI_DOUBLE, ctx->south_peer, 1, comm, &req[2]);
 
-    MPI_Irecv(data + width, 1, ctx->vector, ctx->west_peer, 0, comm, &req[5]);
-    MPI_Irecv(data + (2*width - 1), 1, ctx->vector, ctx->east_peer, 1, comm, &req[4]);
+    MPI_Irecv(data + width, 1, ctx->vector, ctx->west_peer, 2, comm, &req[5]);
+    MPI_Irecv(data + (2*width - 1), 1, ctx->vector, ctx->east_peer, 3, comm, &req[4]);
 
-    MPI_Isend(data + (2*width - 2), 1, ctx->vector, ctx->east_peer, 0, comm, &req[7]);
-    MPI_Isend(data + width + 1, 1, ctx->vector, ctx->west_peer, 1, comm, &req[6]);
-
+    MPI_Isend(data + (2*width - 2), 1, ctx->vector, ctx->east_peer, 2, comm, &req[7]);
+    MPI_Isend(data + width + 1, 1, ctx->vector, ctx->west_peer, 3, comm, &req[6]);
+    printf("Will be waiting %i\n", ctx->rank);
    MPI_Waitall(8, req, status);
+   printf("Exchange done %i\n", ctx->rank);
 }
 
 int gather_result(ctx_t *ctx, opts_t *opts) 

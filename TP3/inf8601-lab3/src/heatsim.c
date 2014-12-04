@@ -246,18 +246,18 @@ int init_ctx(ctx_t *ctx, opts_t *opts) {
 
 	  if(nbProcess > 1)
 	  {
-
-	    for(int process_index = 1; process_index < nbProcess; ++process_index)
+	    int process_index;
+	    for(process_index = 1; process_index < nbProcess; ++process_index)
 	    {
 			int processCoordinates[DIM_2D];
-			MPI_Cart_coords(ctx->comm2d, rank, DIM_2D, processCoordinates);	
+			MPI_Cart_coords(ctx->comm2d, process_index, DIM_2D, processCoordinates);	
 			grid_t *grid = cart2d_get_grid(ctx->cart, processCoordinates[0], processCoordinates[1]);	
 
 			int process_shift = 4*(process_index-1);
-			MPI_ISend(grid->width, 1, MPI_INTEGER, process_index, process_shift, ctx->comm2d, req + process_shift);
-			MPI_ISend(grid->height, 1, MPI_INTEGER, process_index, process_shift + 1, ctx->comm2d, req + process_shift+1);
-			MPI_ISend(grid->padding, 1 , MPI_INTEGER, process_index, process_shift + 2, ctx->comm2d, req + process_shift+2);
-	      	MPI_ISend(grid->dbl, new_grid->pw*new_grid->ph*, MPI_DOUBLE, process_shift + 3, MPI_ANY_TAG, ctx->comm2D, req + process_shift+3);
+			MPI_Isend(&grid->width, 1, MPI_INTEGER, process_index, process_shift, ctx->comm2d, req + process_shift);
+			MPI_Isend(&grid->height, 1, MPI_INTEGER, process_index, process_shift + 1, ctx->comm2d, req + process_shift+1);
+			MPI_Isend(&grid->padding, 1 , MPI_INTEGER, process_index, process_shift + 2, ctx->comm2d, req + process_shift+2);
+	      	MPI_Isend(grid->dbl, new_grid->pw*new_grid->ph, MPI_DOUBLE, process_shift + 3, MPI_ANY_TAG, ctx->comm2d, req + process_shift+3);
 	    }
 	    MPI_Waitall(nbSends, req, status);
 	  }
@@ -329,7 +329,7 @@ void exchng2d(ctx_t *ctx)
     MPI_Isend(data + (2*width - 2), 1, ctx->vector, ctx->east_peer, 0, comm, &req[7]);
     MPI_Isend(data + width + 1, 1, ctx->vector, ctx->west_peer, 1, comm, &req[6]);
 
-
+   MPI_Waitall(8, req, status);
 }
 
 int gather_result(ctx_t *ctx, opts_t *opts) 

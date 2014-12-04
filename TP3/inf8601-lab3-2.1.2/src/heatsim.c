@@ -306,41 +306,96 @@ void dump_ctx(ctx_t *ctx) {
 	fprintf(ctx->log, "***************\n");
 }
 
-void exchng2d(ctx_t *ctx) {
-	/*
-	 *  FIXME: Echanger les bordures avec les voisins
-	 * 4 echanges doivent etre effectues
-	 */
-	TODO("lab3");
-	/*
-	 grid_t *grid = ctx->next_grid;
-	 int width = grid->pw;
-	 int height = grid->ph;
-	 int *data = grid->data;
-	 MPI_Comm comm = ctx->comm2d;
-	 MPI_Request req[8];
-	 MPI_Status status[8];
-	 */
+void exchng2d(ctx_t *ctx) 
+{
+	// grid_t *grid = ctx->next_grid;
+	grid_t *grid = ctx->curr_grid;
+	int width = grid->pw;
+	int height = grid->ph;
+	int *data = grid->data;
+	MPI_Comm comm = ctx->comm2d;
+	MPI_Request req[8];
+	MPI_Status status[8];
+	 
+    MPI_Irecv(data + 1 + (height - 1) * width, width, MPI_DOUBLE, ctx->south_peer, 0, comm, &req[1]);
+    MPI_Irecv(data + 1, width, MPI_DOUBLE, ctx->north_peer, 1, comm, &req[0]);
+
+    MPI_Isend(data + 1 + width, width, MPI_DOUBLE, ctx->north_peer, 0, comm, &req[3]);
+    MPI_Isend(data + 1 + (height - 2) * width, width, MPI_DOUBLE, ctx->south_peer, 1, comm, &req[2]);
+
+    MPI_Irecv(data + width, 1, ctx->vector, ctx->west_peer, 0, comm, &req[5]);
+    MPI_Irecv(data + (2*width - 1), 1, ctx->vector, ctx->east_peer, 1, comm, &req[4]);
+
+    MPI_Isend(data + (2*width - 2), 1, ctx->vector, ctx->east_peer, 0, comm, &req[7]);
+    MPI_Isend(data + width + 1, 1, ctx->vector, ctx->west_peer, 1, comm, &req[6]);
+
+
 }
 
-int gather_result(ctx_t *ctx, opts_t *opts) {
-	TODO("lab3");
+int gather_result(ctx_t *ctx, opts_t *opts) 
+{
 
-	int ret = 0;
-	grid_t *local_grid = grid_padding(ctx->next_grid, 0);
-	if (local_grid == NULL)
-		goto err;
+	// int ret = 0;
+	// grid_t *local_grid = grid_padding(ctx->next_grid, 0);
+	// if (local_grid == NULL)
+	// 	goto err;
 
-	/*
-	 * FIXME: transfer simulation results from all process to rank=0
-	 * use grid for this purpose
-	 */
+	
+	//  * FIXME: transfer simulation results from all process to rank=0
+	//  * use grid for this purpose
+	 
 
-	/* now we can merge all data blocks, reuse global_grid */
-	//cart2d_grid_merge(ctx->cart, ctx->global_grid);
-	/* temporairement copie de next_grid */
-	grid_copy(ctx->next_grid, ctx->global_grid);
+	// /* now we can merge all data blocks, reuse global_grid */
+	// //cart2d_grid_merge(ctx->cart, ctx->global_grid);
+	// /* temporairement copie de next_grid */
+	// grid_copy(ctx->next_grid, ctx->global_grid);
 
+    int ret = 0, rankRec;
+    int coords[2];
+    grid_t* grille;
+    grid_t *local_grid = grid_padding(ctx->next_grid, 0);
+    MPI_Request *req;
+    MPI_Status *status;
+    if (local_grid == NULL)
+        goto err;
+
+    /* temporairement copie de next_grid */
+    if(ctx->numprocs < 2)
+    {
+        grid_copy(ctx->next_grid, ctx->global_grid);
+        goto done;
+    }
+
+    /*
+     * FIXME: transfer simulation results from all process to rank=0
+     * use grid for this purpose
+     */
+    if(ctx->rank == 0)
+    {
+        req = (MPI_Request *) calloc(ctx->numprocs-1, sizeof(MPI_Request));
+        status = (MPI_Status *) calloc(ctx->numprocs-1, sizeof(MPI_Status));
+        for (rankRec = 1; rankRec < ctx->numprocs; rankRec++)
+        {
+            MPI_Cart_coords(ctx->comm2d, rankRec, 2, &coords[0]);
+            grille = cart2d_get_grid(ctx->cart, coords[0], coords[1]);
+            MPI_Irecv(grille->dbl, grille->width*grille->height, MPI_DOUBLE, rankRec, 2, ctx->comm2d, &req[rankRec-1]);
+        }
+        MPI_Waitall(ctx->numprocs - 1, req, status);
+        MPI_Cart_coords(ctx->comm2d, 0, 2, &coords[0]);
+        grille = cart2d_get_grid(ctx->cart, coords[0], coords[1]);
+        grid_copy(ctx->next_grid, grille);
+        // now we can merge all data blocks, reuse global_grid
+        cart2d_grid_merge(ctx->cart, ctx->global_grid);
+    }
+    else
+    {
+        req = (MPI_Request *) malloc(sizeof(MPI_Request));
+        status = (MPI_Status *) malloc(sizeof(MPI_Status));
+        grille = grid_padding(ctx->next_grid, 0);
+        MPI_Isend(grille->dbl, grille->height*grille->width, MPI_DOUBLE, 0, 2, ctx->comm2d, req);
+        MPI_Waitall(1, req, status);
+    }
+    
 	done: free_grid(local_grid);
 	return ret;
 	err: ret = -1;

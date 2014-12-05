@@ -1,0 +1,198 @@
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-small.png --output /tmp/anbenh/images//earth-small_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-small.png --output /tmp/anbenh/images//earth-small_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-small.png --output /tmp/anbenh/images//earth-small_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-medium.png --output /tmp/anbenh/images//earth-medium_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-medium.png --output /tmp/anbenh/images//earth-medium_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-medium.png --output /tmp/anbenh/images//earth-medium_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-large.png --output /tmp/anbenh/images//earth-large_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-large.png --output /tmp/anbenh/images//earth-large_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-large.png --output /tmp/anbenh/images//earth-large_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-xlarge.png --output /tmp/anbenh/images//earth-xlarge_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 6 in communicator MPI_COMM_WORLD 
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpiexec has exited due to process rank 6 with PID 909 on
+node rocks17.local exiting improperly. There are two reasons this could occur:
+
+1. this process did not call "init" before exiting, but others in
+the job did. This can cause a job to hang indefinitely while it waits
+for all processes to call "init". By rule, if one process calls "init",
+then ALL processes must call "init" prior to termination.
+
+2. this process called "init", but exited without calling "finalize".
+By rule, all processes that call "init" MUST call "finalize" prior to
+exiting or it will be considered an "abnormal termination"
+
+This may have caused other processes in the application to be
+terminated by signals sent by mpiexec (as reported here).
+--------------------------------------------------------------------------
+[rocks17.local:00899] 1 more process has sent help message help-mpi-api.txt / mpi-abort
+[rocks17.local:00899] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-xlarge.png --output /tmp/anbenh/images//earth-xlarge_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 5 in communicator MPI_COMM_WORLD 
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpiexec has exited due to process rank 5 with PID 925 on
+node rocks17.local exiting improperly. There are two reasons this could occur:
+
+1. this process did not call "init" before exiting, but others in
+the job did. This can cause a job to hang indefinitely while it waits
+for all processes to call "init". By rule, if one process calls "init",
+then ALL processes must call "init" prior to termination.
+
+2. this process called "init", but exited without calling "finalize".
+By rule, all processes that call "init" MUST call "finalize" prior to
+exiting or it will be considered an "abnormal termination"
+
+This may have caused other processes in the application to be
+terminated by signals sent by mpiexec (as reported here).
+--------------------------------------------------------------------------
+[rocks17.local:00916] 3 more processes have sent help message help-mpi-api.txt / mpi-abort
+[rocks17.local:00916] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 1 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-xlarge.png --output /tmp/anbenh/images//earth-xlarge_16_4_4_1_18079.frontalrocks.info.polymtl.ca.png
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 0 in communicator MPI_COMM_WORLD 
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpiexec has exited due to process rank 2 with PID 938 on
+node rocks17.local exiting improperly. There are two reasons this could occur:
+
+1. this process did not call "init" before exiting, but others in
+the job did. This can cause a job to hang indefinitely while it waits
+for all processes to call "init". By rule, if one process calls "init",
+then ALL processes must call "init" prior to termination.
+
+2. this process called "init", but exited without calling "finalize".
+By rule, all processes that call "init" MUST call "finalize" prior to
+exiting or it will be considered an "abnormal termination"
+
+This may have caused other processes in the application to be
+terminated by signals sent by mpiexec (as reported here).
+--------------------------------------------------------------------------
+[rocks17.local:00932] 4 more processes have sent help message help-mpi-api.txt / mpi-abort
+[rocks17.local:00932] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-small.png --output /tmp/anbenh/images//earth-small_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-small.png --output /tmp/anbenh/images//earth-small_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-small.png --output /tmp/anbenh/images//earth-small_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-medium.png --output /tmp/anbenh/images//earth-medium_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-medium.png --output /tmp/anbenh/images//earth-medium_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-medium.png --output /tmp/anbenh/images//earth-medium_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-large.png --output /tmp/anbenh/images//earth-large_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-large.png --output /tmp/anbenh/images//earth-large_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-large.png --output /tmp/anbenh/images//earth-large_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+saving...
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-xlarge.png --output /tmp/anbenh/images//earth-xlarge_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 6 in communicator MPI_COMM_WORLD 
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpiexec has exited due to process rank 6 with PID 1122 on
+node rocks17.local exiting improperly. There are two reasons this could occur:
+
+1. this process did not call "init" before exiting, but others in
+the job did. This can cause a job to hang indefinitely while it waits
+for all processes to call "init". By rule, if one process calls "init",
+then ALL processes must call "init" prior to termination.
+
+2. this process called "init", but exited without calling "finalize".
+By rule, all processes that call "init" MUST call "finalize" prior to
+exiting or it will be considered an "abnormal termination"
+
+This may have caused other processes in the application to be
+terminated by signals sent by mpiexec (as reported here).
+--------------------------------------------------------------------------
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-xlarge.png --output /tmp/anbenh/images//earth-xlarge_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 1 in communicator MPI_COMM_WORLD 
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+[rocks17.local][[15700,1],4][btl_tcp_frag.c:215:mca_btl_tcp_frag_recv] mca_btl_tcp_frag_recv: readv failed: Connection reset by peer (104)
+--------------------------------------------------------------------------
+mpiexec has exited due to process rank 1 with PID 1144 on
+node rocks17.local exiting improperly. There are two reasons this could occur:
+
+1. this process did not call "init" before exiting, but others in
+the job did. This can cause a job to hang indefinitely while it waits
+for all processes to call "init". By rule, if one process calls "init",
+then ALL processes must call "init" prior to termination.
+
+2. this process called "init", but exited without calling "finalize".
+By rule, all processes that call "init" MUST call "finalize" prior to
+exiting or it will be considered an "abnormal termination"
+
+This may have caused other processes in the application to be
+terminated by signals sent by mpiexec (as reported here).
+--------------------------------------------------------------------------
+[rocks17.local:01139] 1 more process has sent help message help-mpi-api.txt / mpi-abort
+[rocks17.local:01139] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
+Executing: mpiexec -hostfile /var/spool/torque/aux//18079.frontalrocks.info.polymtl.ca -np 16 /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../src/heatsim --dimx 4 --dimy 4 --iter 2000 --input /usagers/anbenh/ParallelTP/TP3/inf8601-lab3/cluster/../images/earth-xlarge.png --output /tmp/anbenh/images//earth-xlarge_16_4_4_2000_18079.frontalrocks.info.polymtl.ca.png
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 7 in communicator MPI_COMM_WORLD 
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+[rocks17.local][[15745,1],1][btl_tcp_frag.c:215:mca_btl_tcp_frag_recv] mca_btl_tcp_frag_recv: readv failed: Connection reset by peer (104)
+--------------------------------------------------------------------------
+mpiexec has exited due to process rank 2 with PID 1196 on
+node rocks17.local exiting improperly. There are two reasons this could occur:
+
+1. this process did not call "init" before exiting, but others in
+the job did. This can cause a job to hang indefinitely while it waits
+for all processes to call "init". By rule, if one process calls "init",
+then ALL processes must call "init" prior to termination.
+
+2. this process called "init", but exited without calling "finalize".
+By rule, all processes that call "init" MUST call "finalize" prior to
+exiting or it will be considered an "abnormal termination"
+
+This may have caused other processes in the application to be
+terminated by signals sent by mpiexec (as reported here).
+--------------------------------------------------------------------------
+[rocks17.local:01190] 1 more process has sent help message help-mpi-api.txt / mpi-abort
+[rocks17.local:01190] Set MCA parameter "orte_base_help_aggregate" to 0 to see all help / error messages
